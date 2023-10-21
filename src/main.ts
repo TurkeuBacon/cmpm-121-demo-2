@@ -9,16 +9,36 @@ interface Point {
     y: number;
 }
 
+class MarkerLine {
+    initialPoint: Point;
+    linePoints: Point[];
+    constructor(x: number, y: number) {
+        this.initialPoint = { x: x, y: y };
+        this.linePoints = [];
+    }
+    drag(x: number, y: number) {
+        this.linePoints.push({ x: x, y: y });
+    }
+    display(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.moveTo(this.initialPoint.x, this.initialPoint.y);
+        for (const point of this.linePoints) {
+            ctx.lineTo(point.x, point.y);
+        }
+        ctx.stroke();
+    }
+}
+
 let drawing = false;
 const zero = 0;
 const canvasSize = 256;
 const canvasBackgroundColor = "white";
 const lineColor = "black";
 
-let points: Point[][] = [];
-let currentLine: Point[];
+let points: MarkerLine[] = [];
+let currentLine: MarkerLine;
 
-let redoStack: Point[][] = [];
+let redoStack: MarkerLine[] = [];
 
 document.title = gameName;
 
@@ -42,7 +62,7 @@ clearButton.onclick = () => {
 const undoButton = document.createElement("button");
 undoButton.innerText = "UNDO";
 undoButton.onclick = () => {
-    if (points.length > 0) {
+    if (points.length > zero) {
         redoStack.push(points.pop()!);
         dispatchEvent(new Event("drawing-changed"));
     }
@@ -50,7 +70,7 @@ undoButton.onclick = () => {
 const redoButton = document.createElement("button");
 redoButton.innerText = "REDO";
 redoButton.onclick = () => {
-    if (redoStack.length > 0) {
+    if (redoStack.length > zero) {
         points.push(redoStack.pop()!);
         dispatchEvent(new Event("drawing-changed"));
     }
@@ -64,7 +84,7 @@ app.append(redoButton);
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
         drawing = true;
-        currentLine = [];
+        currentLine = new MarkerLine(event.offsetX, event.offsetY);
         points.push(currentLine);
     }
 });
@@ -74,7 +94,7 @@ addEventListener("mouseup", () => {
 
 addEventListener("mousemove", (event) => {
     if (event.target == canvas && drawing) {
-        currentLine.push({ x: event.offsetX, y: event.offsetY });
+        currentLine.drag(event.offsetX, event.offsetY);
         dispatchEvent(new Event("drawing-changed"));
     }
 });
@@ -83,17 +103,9 @@ addEventListener("drawing-changed", () => {
     clearCanvas();
     ctx.strokeStyle = lineColor;
     for (const line of points) {
-        drawLine(line);
+        line.display(ctx);
     }
 });
-
-function drawLine(points: Point[]) {
-    ctx.beginPath();
-    for (const point of points) {
-        ctx.lineTo(point.x, point.y);
-        ctx.stroke();
-    }
-}
 function clearCanvas() {
     ctx.fillStyle = canvasBackgroundColor;
     ctx.fillRect(zero, zero, canvas.width, canvas.height);
