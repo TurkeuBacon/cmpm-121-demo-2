@@ -10,11 +10,13 @@ interface Point {
 }
 
 let drawing = false;
+const zero = 0;
 const canvasSize = 256;
 const canvasBackgroundColor = "white";
 const lineColor = "black";
 
-const points: Point[][] = [];
+let points: Point[][] = [];
+let currentLine: Point[];
 
 document.title = gameName;
 
@@ -30,11 +32,19 @@ canvas.style.border = "3px solid black";
 canvas.style.borderRadius = "15px";
 canvas.style.boxShadow = "10px 10px #111111FF";
 app.append(canvas);
+const clearButton = document.createElement("button");
+clearButton.innerText = "CLEAR";
+clearButton.onclick = () => {
+    clearCanvas();
+    points = [];
+};
+app.append(clearButton);
 
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
         drawing = true;
-        points.push([]);
+        currentLine = [];
+        points.push(currentLine);
     }
 });
 addEventListener("mouseup", () => {
@@ -43,7 +53,7 @@ addEventListener("mouseup", () => {
 
 addEventListener("mousemove", (event) => {
     if (event.target == canvas && drawing) {
-        points[points.length - 1].push({ x: event.offsetX, y: event.offsetY });
+        currentLine.push({ x: event.offsetX, y: event.offsetY });
         dispatchEvent(new Event("drawing-changed"));
     }
 });
@@ -65,5 +75,5 @@ function drawLine(points: Point[]) {
 }
 function clearCanvas() {
     ctx.fillStyle = canvasBackgroundColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(zero, zero, canvas.width, canvas.height);
 }
