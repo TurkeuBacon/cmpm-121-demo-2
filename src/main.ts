@@ -4,6 +4,8 @@ const app: HTMLDivElement = document.querySelector("#app")!;
 
 const gameName = "Bunger";
 
+let drawing = false;
+
 document.title = gameName;
 
 const header = document.createElement("h1");
@@ -19,3 +21,20 @@ canvas.style.border = "3px solid black";
 canvas.style.borderRadius = "15px";
 canvas.style.boxShadow = "10px 10px #111111FF";
 app.append(canvas);
+
+addEventListener("mousedown", (event) => {
+    if (event.target == canvas) {
+        drawing = true;
+        ctx.beginPath();
+    }
+});
+addEventListener("mouseup", (event) => {
+        drawing = false;
+});
+
+addEventListener("mousemove", (event) => {
+    if (event.target == canvas && drawing) {
+        ctx.lineTo(event.offsetX, event.offsetY);
+        ctx.stroke();
+    }
+});
