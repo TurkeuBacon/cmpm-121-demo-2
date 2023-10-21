@@ -18,11 +18,12 @@ const lineColor = "black";
 let points: Point[][] = [];
 let currentLine: Point[];
 
+let redoStack: Point[][] = [];
+
 document.title = gameName;
 
 const header = document.createElement("h1");
 header.innerHTML = gameName;
-app.append(header);
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d")!;
 ctx.canvas.width = canvasSize;
@@ -31,14 +32,34 @@ clearCanvas();
 canvas.style.border = "3px solid black";
 canvas.style.borderRadius = "15px";
 canvas.style.boxShadow = "10px 10px #111111FF";
-app.append(canvas);
 const clearButton = document.createElement("button");
 clearButton.innerText = "CLEAR";
 clearButton.onclick = () => {
     clearCanvas();
     points = [];
+    redoStack = [];
 };
+const undoButton = document.createElement("button");
+undoButton.innerText = "UNDO";
+undoButton.onclick = () => {
+    if (points.length > 0) {
+        redoStack.push(points.pop()!);
+        dispatchEvent(new Event("drawing-changed"));
+    }
+};
+const redoButton = document.createElement("button");
+redoButton.innerText = "REDO";
+redoButton.onclick = () => {
+    if (redoStack.length > 0) {
+        points.push(redoStack.pop()!);
+        dispatchEvent(new Event("drawing-changed"));
+    }
+};
+app.append(header);
+app.append(canvas);
 app.append(clearButton);
+app.append(undoButton);
+app.append(redoButton);
 
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
