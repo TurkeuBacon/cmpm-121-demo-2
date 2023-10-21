@@ -28,7 +28,7 @@ addEventListener("mousedown", (event) => {
         ctx.beginPath();
     }
 });
-addEventListener("mouseup", (event) => {
+addEventListener("mouseup", () => {
         drawing = false;
 });
 
