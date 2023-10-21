@@ -12,15 +12,18 @@ interface Point {
 class MarkerLine {
     initialPoint: Point;
     linePoints: Point[];
-    constructor(x: number, y: number) {
+    thickness: number;
+    constructor(x: number, y: number, thickness: number) {
         this.initialPoint = { x: x, y: y };
         this.linePoints = [];
+        this.thickness = thickness;
     }
     drag(x: number, y: number) {
         this.linePoints.push({ x: x, y: y });
     }
     display(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
+        ctx.lineWidth = this.thickness;
         ctx.moveTo(this.initialPoint.x, this.initialPoint.y);
         for (const point of this.linePoints) {
             ctx.lineTo(point.x, point.y);
@@ -34,6 +37,9 @@ const zero = 0;
 const canvasSize = 256;
 const canvasBackgroundColor = "white";
 const lineColor = "black";
+const thickThickness = 7;
+const thinThickness = 2;
+let lineThickness: number = thinThickness;
 
 let points: MarkerLine[] = [];
 let currentLine: MarkerLine;
@@ -75,16 +81,28 @@ redoButton.onclick = () => {
         dispatchEvent(new Event("drawing-changed"));
     }
 };
+const thickyVicky = document.createElement("button");
+thickyVicky.innerText = "THICK";
+thickyVicky.onclick = () => {
+    lineThickness = thickThickness;
+};
+const thinnyVinny = document.createElement("button");
+thinnyVinny.innerText = "THIN";
+thinnyVinny.onclick = () => {
+    lineThickness = thinThickness;
+};
 app.append(header);
 app.append(canvas);
 app.append(clearButton);
 app.append(undoButton);
 app.append(redoButton);
+app.append(thickyVicky);
+app.append(thinnyVinny);
 
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
         drawing = true;
-        currentLine = new MarkerLine(event.offsetX, event.offsetY);
+        currentLine = new MarkerLine(event.offsetX, event.offsetY, lineThickness);
         points.push(currentLine);
     }
 });
