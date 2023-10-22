@@ -32,14 +32,42 @@ class MarkerLine {
     }
 }
 
+class Cursor {
+    currentThickness: number;
+    cursorX: number;
+    cursorY: number;
+    constructor(thickness: number) {
+        this.currentThickness = thickness;
+        this.cursorX = 0;
+        this.cursorY = 0;
+    }
+    setThickness(thickness: number) {
+        this.currentThickness = thickness;
+    }
+    hover(x: number, y: number) {
+        this.cursorX = x;
+        this.cursorY = y;
+    }
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.lineWidth = this.currentThickness;
+        ctx.strokeStyle = lineColor;
+        ctx.arc(this.cursorX, this.cursorY, this.currentThickness * half, zero, circleDegrees);
+        ctx.stroke();
+    }
+}
+
 let drawing = false;
 const zero = 0;
+const half = .5;
+const circleDegrees = 360;
 const canvasSize = 256;
 const canvasBackgroundColor = "white";
 const lineColor = "black";
 const thickThickness = 7;
 const thinThickness = 2;
 let lineThickness: number = thinThickness;
+let cursor: null | Cursor = new Cursor(lineThickness);
 
 let points: MarkerLine[] = [];
 let currentLine: MarkerLine;
@@ -85,11 +113,17 @@ const thickyVicky = document.createElement("button");
 thickyVicky.innerText = "THICK";
 thickyVicky.onclick = () => {
     lineThickness = thickThickness;
+    if (cursor != null) {
+        cursor.setThickness(lineThickness);
+    }
 };
 const thinnyVinny = document.createElement("button");
 thinnyVinny.innerText = "THIN";
 thinnyVinny.onclick = () => {
     lineThickness = thinThickness;
+    if (cursor != null) {
+        cursor.setThickness(lineThickness);
+    }
 };
 app.append(header);
 app.append(canvas);
@@ -107,14 +141,28 @@ addEventListener("mousedown", (event) => {
     }
 });
 addEventListener("mouseup", () => {
-        drawing = false;
+    drawing = false;
+    cursor = new Cursor(lineThickness);
 });
 
 addEventListener("mousemove", (event) => {
-    if (event.target == canvas && drawing) {
-        currentLine.drag(event.offsetX, event.offsetY);
+    if (event.target == canvas) {
+        if (drawing) {
+            cursor = null;
+            currentLine.drag(event.offsetX, event.offsetY);
+        } else if (cursor != null) {
+            cursor.hover(event.offsetX, event.offsetY);
+        }
         dispatchEvent(new Event("drawing-changed"));
     }
+});
+addEventListener("mouseover", (event) => {
+    if (event.target == canvas && !drawing) {
+        cursor = new Cursor(lineThickness);
+    } else {
+        cursor = null;
+    }
+    dispatchEvent(new Event("drawing-changed"));
 });
 
 addEventListener("drawing-changed", () => {
@@ -122,6 +170,9 @@ addEventListener("drawing-changed", () => {
     ctx.strokeStyle = lineColor;
     for (const line of points) {
         line.display(ctx);
+    }
+    if (cursor != null) {
+        cursor.draw(ctx);
     }
 });
 function clearCanvas() {
