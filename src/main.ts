@@ -43,6 +43,8 @@ class Sticker {
         this.position = { x: x, y: y };
     }
     display(ctx: CanvasRenderingContext2D) {
+        ctx.font = STICKER_FONT;
+        ctx.fillStyle = LINE_COLOR;
         ctx.fillText(this.sticker, this.position.x, this.position.y);
     }
 }
@@ -100,6 +102,8 @@ class StickerCursor {
     }
     draw(ctx: CanvasRenderingContext2D) {
         if (!this.previewVisible) return;
+        ctx.font = STICKER_FONT;
+        ctx.fillStyle = LINE_COLOR;
         ctx.fillText(this.currentSticker, this.cursorX, this.cursorY);
     }
     setVisible(visible: boolean) {
@@ -121,11 +125,12 @@ const CANVAS_SIZE = 256;
 const EXPORT_SIZE = 1024;
 const CANVAS_BACKGROUND_COLOR = "white";
 const LINE_COLOR = "black";
+const STICKER_FONT = "30px serif";
 
-const THICK_THICKNESS = 7;
-const THIN_THICKNESS = 2;
+const THICK_THICKNESS = 8;
+const THIN_THICKNESS = 3;
 
-const DEFAULT_STICKERS = ["🤠", "👉", "👈"];
+const DEFAULT_STICKERS = ["🤠", "👉", "👈", "🔫", "( ͡° ͜ʖ ͡°)"];
 
 let currentThickness: number = THIN_THICKNESS;
 
