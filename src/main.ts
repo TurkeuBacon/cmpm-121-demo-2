@@ -22,6 +22,7 @@ class MarkerLine {
         this.linePoints.push({ x: x, y: y });
     }
     display(ctx: CanvasRenderingContext2D) {
+        ctx.strokeStyle = LINE_COLOR;
         ctx.beginPath();
         ctx.lineWidth = this.thickness;
         ctx.moveTo(this.initialPoint.x, this.initialPoint.y);
@@ -117,6 +118,7 @@ const zero = 0;
 const HALF = .5;
 const CIRCLE_DEGREES = 360;
 const CANVAS_SIZE = 256;
+const EXPORT_SIZE = 1024;
 const CANVAS_BACKGROUND_COLOR = "white";
 const LINE_COLOR = "black";
 
@@ -129,7 +131,7 @@ let currentThickness: number = THIN_THICKNESS;
 
 let cursor: LineCursor | StickerCursor = new LineCursor(currentThickness);
 
-let points: (MarkerLine | Sticker)[] = [];
+let drawables: (MarkerLine | Sticker)[] = [];
 let currentDrawable: MarkerLine | Sticker;
 
 let redoStack: (MarkerLine | Sticker)[] = [];
@@ -146,18 +148,24 @@ clearCanvas();
 canvas.style.border = "3px solid black";
 canvas.style.borderRadius = "15px";
 canvas.style.boxShadow = "10px 10px #111111FF";
+
+const downloadButton = document.createElement("button");
+downloadButton.innerText = "DOWNLOAD";
+downloadButton.onclick = () => {
+    exportCanvas();
+};
 const clearButton = document.createElement("button");
 clearButton.innerText = "CLEAR";
 clearButton.onclick = () => {
     clearCanvas();
-    points = [];
+    drawables = [];
     redoStack = [];
 };
 const undoButton = document.createElement("button");
 undoButton.innerText = "UNDO";
 undoButton.onclick = () => {
-    if (points.length > zero) {
-        redoStack.push(points.pop()!);
+    if (drawables.length > zero) {
+        redoStack.push(drawables.pop()!);
         dispatchEvent(DRAWING_CHANGED_EVENT);
     }
 };
@@ -165,7 +173,7 @@ const redoButton = document.createElement("button");
 redoButton.innerText = "REDO";
 redoButton.onclick = () => {
     if (redoStack.length > zero) {
-        points.push(redoStack.pop()!);
+        drawables.push(redoStack.pop()!);
         dispatchEvent(DRAWING_CHANGED_EVENT);
     }
 };
@@ -201,6 +209,7 @@ addStickerButton.onclick = () => {
 };
 app.append(header);
 app.append(canvas);
+app.append(downloadButton);
 app.append(clearButton);
 app.append(undoButton);
 app.append(redoButton);
@@ -216,7 +225,7 @@ addEventListener("mousedown", (event) => {
         cursor.setVisible(false);
         drawing = true;
         currentDrawable = cursor.getDrawable(event.offsetX, event.offsetY);
-        points.push(currentDrawable);
+        drawables.push(currentDrawable);
         redoStack = [];
         dispatchEvent(TOOL_MOVED_EVENT);
     }
@@ -259,7 +268,7 @@ addEventListener(TOOL_MOVED_EVENT.type, () => {
 function redraw() {
     clearCanvas();
     ctx.strokeStyle = LINE_COLOR;
-    for (const line of points) {
+    for (const line of drawables) {
         line.display(ctx);
     }
     cursor.draw(ctx);
@@ -268,4 +277,23 @@ function redraw() {
 function clearCanvas() {
     ctx.fillStyle = CANVAS_BACKGROUND_COLOR;
     ctx.fillRect(zero, zero, canvas.width, canvas.height);
+}
+
+function exportCanvas() {
+    const exportCanvas = document.createElement("canvas");
+    const exportCtx = exportCanvas.getContext("2d")!;
+    exportCtx.canvas.width = EXPORT_SIZE;
+    exportCtx.canvas.height = EXPORT_SIZE;
+    exportCtx.fillStyle = CANVAS_BACKGROUND_COLOR;
+    exportCtx.fillRect(zero, zero, exportCanvas.width, exportCanvas.height);
+    const SCALE_FACTOR = EXPORT_SIZE / CANVAS_SIZE;
+    exportCtx.scale(SCALE_FACTOR, SCALE_FACTOR);
+    drawables.forEach(drawable => {
+        drawable.display(exportCtx);
+    });
+
+    const anchor = document.createElement("a");
+    anchor.href = exportCanvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();
 }
