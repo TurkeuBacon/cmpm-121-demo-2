@@ -65,7 +65,7 @@ class LineCursor {
         this.cursorY = y;
     }
     draw(ctx: CanvasRenderingContext2D) {
-        if(!this.previewVisible) return
+        if (!this.previewVisible) return;
         ctx.beginPath();
         ctx.lineWidth = this.currentThickness;
         ctx.strokeStyle = LINE_COLOR;
@@ -73,10 +73,10 @@ class LineCursor {
         ctx.stroke();
     }
     setVisible(visible: boolean) {
-        this.previewVisible = visible
+        this.previewVisible = visible;
     }
     getDrawable(x: number, y: number): MarkerLine {
-        return new MarkerLine(x, y, currentThickness)
+        return new MarkerLine(x, y, currentThickness);
     }
 }
 class StickerCursor {
@@ -174,13 +174,13 @@ redoButton.onclick = () => {
 const thickyVicky = document.createElement("button");
 thickyVicky.innerText = "THICK";
 thickyVicky.onclick = () => {
-    currentThickness = THICK_THICKNESS
+    currentThickness = THICK_THICKNESS;
     cursor = new LineCursor(currentThickness);
 };
 const thinnyVinny = document.createElement("button");
 thinnyVinny.innerText = "THIN";
 thinnyVinny.onclick = () => {
-    currentThickness = THIN_THICKNESS
+    currentThickness = THIN_THICKNESS;
     cursor = new LineCursor(currentThickness);
 };
 const cowboyStickerButton = document.createElement("button");
@@ -218,7 +218,7 @@ addEventListener("mousedown", (event) => {
         drawing = true;
         currentDrawable = cursor.getDrawable(event.offsetX, event.offsetY);
         points.push(currentDrawable);
-        redoStack = []
+        redoStack = [];
         dispatchEvent(TOOL_MOVED_EVENT);
     }
 });
@@ -243,18 +243,18 @@ addEventListener("mousemove", (event) => {
 });
 addEventListener("mouseover", (event) => {
     if (event.target == canvas && !drawing) {
-        cursor.setVisible(true)
+        cursor.setVisible(true);
     } else {
-        cursor.setVisible(false)
+        cursor.setVisible(false);
     }
     dispatchEvent(DRAWING_CHANGED_EVENT);
 });
 
 addEventListener(DRAWING_CHANGED_EVENT.type, () => {
-    redraw()
+    redraw();
 });
 addEventListener(TOOL_MOVED_EVENT.type, () => {
-    redraw()
+    redraw();
 });
 
 function redraw() {
