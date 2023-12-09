@@ -76,7 +76,7 @@ class LineCursor {
         ctx.beginPath();
         ctx.lineWidth = this.currentThickness;
         ctx.strokeStyle = currentColor;
-        ctx.arc(this.cursorX, this.cursorY, this.currentThickness * HALF, zero, CIRCLE_DEGREES);
+        ctx.arc(this.cursorX, this.cursorY, this.currentThickness * HALF, ZERO, CIRCLE_DEGREES);
         ctx.stroke();
     }
     setVisible(visible: boolean) {
@@ -122,7 +122,9 @@ let drawing = false;
 const DRAWING_CHANGED_EVENT = new Event("drawing-changed");
 const TOOL_MOVED_EVENT = new Event("tool-moved");
 
-const zero = 0;
+const ZERO = 0;
+const HEX_CODE_LENGTH = 6;
+const HEX_BASE = 16;
 const HALF = .5;
 const CIRCLE_DEGREES = 360;
 const CANVAS_SIZE = 256;
@@ -134,10 +136,9 @@ const THICK_THICKNESS = 8;
 const THIN_THICKNESS = 3;
 
 const DEFAULT_STICKERS = ["🤠", "👉", "👈", "🔫", "( ͡° ͜ʖ ͡°)"];
-const COLOR_PALLETE = ["black", "red", "green", "blue"];
 
 let currentThickness: number = THIN_THICKNESS;
-let currentColor: string = COLOR_PALLETE[zero];
+let currentColor = "#00ff00";
 
 let cursor: LineCursor | StickerCursor = new LineCursor(currentThickness);
 
@@ -174,7 +175,7 @@ clearButton.onclick = () => {
 const undoButton = document.createElement("button");
 undoButton.innerText = "UNDO";
 undoButton.onclick = () => {
-    if (drawables.length > zero) {
+    if (drawables.length > ZERO) {
         redoStack.push(drawables.pop()!);
         dispatchEvent(DRAWING_CHANGED_EVENT);
     }
@@ -182,7 +183,7 @@ undoButton.onclick = () => {
 const redoButton = document.createElement("button");
 redoButton.innerText = "REDO";
 redoButton.onclick = () => {
-    if (redoStack.length > zero) {
+    if (redoStack.length > ZERO) {
         drawables.push(redoStack.pop()!);
         dispatchEvent(DRAWING_CHANGED_EVENT);
     }
@@ -209,16 +210,6 @@ function addSticker(newSticker: string) {
     };
     app.append(newStickerButton);
 }
-function addColor(color: string) {
-    const newColorButton = document.createElement("button");
-    newColorButton.style.color = color;
-    newColorButton.innerText = color;
-    newColorButton.onclick = () => {
-        currentColor = color;
-        dispatchEvent(TOOL_MOVED_EVENT);
-    };
-    app.append(newColorButton);
-}
 
 const addStickerButton = document.createElement("button");
 addStickerButton.innerText = "Add Sticker";
@@ -228,6 +219,21 @@ addStickerButton.onclick = () => {
         addSticker(newSticker);
     }
 };
+
+const colorSlider = document.createElement("input");
+colorSlider.type = "range";
+colorSlider.min = "0";
+colorSlider.max = "16777215";
+colorSlider.step = "1";
+colorSlider.value = parseInt(currentColor.substring(HEX_CODE_LENGTH - currentColor.length), HEX_BASE).toString();
+const colorSliderLabel = document.createElement("label");
+colorSliderLabel.innerText = "Color";
+colorSliderLabel.style.color = getHexCode(parseInt(colorSlider.value));
+colorSlider.onchange = () => {
+    colorSliderLabel.style.color = getHexCode(parseInt(colorSlider.value));
+    currentColor = getHexCode(parseInt(colorSlider.value));
+};
+
 app.append(header);
 app.append(canvas);
 app.append(downloadButton);
@@ -236,9 +242,8 @@ app.append(undoButton);
 app.append(redoButton);
 app.append(thickyVicky);
 app.append(thinnyVinny);
-COLOR_PALLETE.forEach(color => {
-    addColor(color);
-});
+app.append(colorSlider);
+app.append(colorSliderLabel);
 app.append(addStickerButton);
 DEFAULT_STICKERS.forEach(sticker => {
     addSticker(sticker);
@@ -271,6 +276,8 @@ addEventListener("mousemove", (event) => {
         } else {
             dispatchEvent(TOOL_MOVED_EVENT);
         }
+    } else if (event.target == colorSlider) {
+        colorSliderLabel.style.color = getHexCode(parseInt(colorSlider.value));
     }
 });
 addEventListener("mouseover", (event) => {
@@ -299,7 +306,7 @@ function redraw() {
 
 function clearCanvas() {
     ctx.fillStyle = CANVAS_BACKGROUND_COLOR;
-    ctx.fillRect(zero, zero, canvas.width, canvas.height);
+    ctx.fillRect(ZERO, ZERO, canvas.width, canvas.height);
 }
 
 function exportCanvas() {
@@ -308,7 +315,7 @@ function exportCanvas() {
     exportCtx.canvas.width = EXPORT_SIZE;
     exportCtx.canvas.height = EXPORT_SIZE;
     exportCtx.fillStyle = CANVAS_BACKGROUND_COLOR;
-    exportCtx.fillRect(zero, zero, exportCanvas.width, exportCanvas.height);
+    exportCtx.fillRect(ZERO, ZERO, exportCanvas.width, exportCanvas.height);
     const SCALE_FACTOR = EXPORT_SIZE / CANVAS_SIZE;
     exportCtx.scale(SCALE_FACTOR, SCALE_FACTOR);
     drawables.forEach(drawable => {
@@ -319,4 +326,14 @@ function exportCanvas() {
     anchor.href = exportCanvas.toDataURL("image/png");
     anchor.download = "sketchpad.png";
     anchor.click();
+}
+
+function getHexCode(decimal: number): string {
+    let hexCode = (decimal).toString(HEX_BASE);
+
+    while (hexCode.length < HEX_CODE_LENGTH) {
+        hexCode = "0" + hexCode;
+    }
+
+    return "#" + hexCode;
 }
