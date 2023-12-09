@@ -31,12 +31,28 @@ class MarkerLine {
         ctx.stroke();
     }
 }
+class Sticker {
+    position: Point;
+    sticker: string;
+    constructor(x: number, y: number, sticker: string) {
+        this.position = { x:x, y:y };
+        this.sticker = sticker;
+    }
+    drag(x: number, y: number) {
+        this.position = { x: x, y: y };
+    }
+    display(ctx: CanvasRenderingContext2D) {
+        ctx.fillText(this.sticker, this.position.x, this.position.y);
+    }
+}
 
-class Cursor {
+class LineCursor {
+    previewVisible: boolean;
     currentThickness: number;
     cursorX: number;
     cursorY: number;
     constructor(thickness: number) {
+        this.previewVisible = false;
         this.currentThickness = thickness;
         this.cursorX = 0;
         this.cursorY = 0;
@@ -44,35 +60,81 @@ class Cursor {
     setThickness(thickness: number) {
         this.currentThickness = thickness;
     }
-    hover(x: number, y: number) {
+    move(x: number, y: number) {
         this.cursorX = x;
         this.cursorY = y;
     }
     draw(ctx: CanvasRenderingContext2D) {
+        if(!this.previewVisible) return
         ctx.beginPath();
         ctx.lineWidth = this.currentThickness;
-        ctx.strokeStyle = lineColor;
-        ctx.arc(this.cursorX, this.cursorY, this.currentThickness * half, zero, circleDegrees);
+        ctx.strokeStyle = LINE_COLOR;
+        ctx.arc(this.cursorX, this.cursorY, this.currentThickness * HALF, zero, CIRCLE_DEGREES);
         ctx.stroke();
+    }
+    setVisible(visible: boolean) {
+        this.previewVisible = visible
+    }
+    getDrawable(x: number, y: number): MarkerLine {
+        return new MarkerLine(x, y, currentThickness)
+    }
+}
+class StickerCursor {
+    previewVisible: boolean;
+    currentSticker: string;
+    cursorX: number;
+    cursorY: number;
+    constructor(sticker: string) {
+        this.previewVisible = false;
+        this.currentSticker = sticker;
+        this.cursorX = 0;
+        this.cursorY = 0;
+    }
+    setSticker(sticker: string) {
+        this.currentSticker = sticker;
+    }
+    move(x: number, y: number) {
+        this.cursorX = x;
+        this.cursorY = y;
+    }
+    draw(ctx: CanvasRenderingContext2D) {
+        if (!this.previewVisible) return;
+        ctx.fillText(this.currentSticker, this.cursorX, this.cursorY);
+    }
+    setVisible(visible: boolean) {
+        this.previewVisible = visible;
+    }
+    getDrawable(x: number, y: number): Sticker {
+        return new Sticker(x, y, this.currentSticker);
     }
 }
 
 let drawing = false;
+const DRAWING_CHANGED_EVENT = new Event("drawing-changed");
+const TOOL_MOVED_EVENT = new Event("tool-moved");
+
 const zero = 0;
-const half = .5;
-const circleDegrees = 360;
-const canvasSize = 256;
-const canvasBackgroundColor = "white";
-const lineColor = "black";
-const thickThickness = 7;
-const thinThickness = 2;
-let lineThickness: number = thinThickness;
-let cursor: null | Cursor = new Cursor(lineThickness);
+const HALF = .5;
+const CIRCLE_DEGREES = 360;
+const CANVAS_SIZE = 256;
+const CANVAS_BACKGROUND_COLOR = "white";
+const LINE_COLOR = "black";
 
-let points: MarkerLine[] = [];
-let currentLine: MarkerLine;
+const THICK_THICKNESS = 7;
+const THIN_THICKNESS = 2;
 
-let redoStack: MarkerLine[] = [];
+const COWBOY_STICKER = "🤠";
+const RIGHT_FINGER_GUN_STICKER = "👉";
+const LEFT_FINGER_GUN_STICKER = "👈";
+
+let currentThickness: number = THIN_THICKNESS;
+
+let cursor: LineCursor | StickerCursor = new LineCursor(currentThickness);
+
+let points: (MarkerLine | Sticker)[] = [];
+let currentDrawable: MarkerLine | Sticker;
+
+let redoStack: (MarkerLine | Sticker)[] = [];
 
 document.title = gameName;
 
@@ -80,8 +142,8 @@ const header = document.createElement("h1");
 header.innerHTML = gameName;
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d")!;
-ctx.canvas.width = canvasSize;
-ctx.canvas.height = canvasSize;
+ctx.canvas.width = CANVAS_SIZE;
+ctx.canvas.height = CANVAS_SIZE;
 clearCanvas();
 canvas.style.border = "3px solid black";
 canvas.style.borderRadius = "15px";
@@ -98,7 +160,7 @@ undoButton.innerText = "UNDO";
 undoButton.onclick = () => {
     if (points.length > zero) {
         redoStack.push(points.pop()!);
-        dispatchEvent(new Event("drawing-changed"));
+        dispatchEvent(DRAWING_CHANGED_EVENT);
     }
 };
 const redoButton = document.createElement("button");
@@ -106,24 +168,38 @@ redoButton.innerText = "REDO";
 redoButton.onclick = () => {
     if (redoStack.length > zero) {
         points.push(redoStack.pop()!);
-        dispatchEvent(new Event("drawing-changed"));
+        dispatchEvent(DRAWING_CHANGED_EVENT);
     }
 };
 const thickyVicky = document.createElement("button");
 thickyVicky.innerText = "THICK";
 thickyVicky.onclick = () => {
-    lineThickness = thickThickness;
-    if (cursor != null) {
-        cursor.setThickness(lineThickness);
-    }
+    currentThickness = THICK_THICKNESS
+    cursor = new LineCursor(currentThickness);
 };
 const thinnyVinny = document.createElement("button");
 thinnyVinny.innerText = "THIN";
 thinnyVinny.onclick = () => {
-    lineThickness = thinThickness;
-    if (cursor != null) {
-        cursor.setThickness(lineThickness);
-    }
+    currentThickness = THIN_THICKNESS
+    cursor = new LineCursor(currentThickness);
+};
+const cowboyStickerButton = document.createElement("button");
+cowboyStickerButton.innerText = COWBOY_STICKER;
+cowboyStickerButton.onclick = () => {
+    cursor = new StickerCursor(COWBOY_STICKER);
+    dispatchEvent(TOOL_MOVED_EVENT);
+};
+const rightFingerGunStickerButton = document.createElement("button");
+rightFingerGunStickerButton.innerText = RIGHT_FINGER_GUN_STICKER;
+rightFingerGunStickerButton.onclick = () => {
+    cursor = new StickerCursor(RIGHT_FINGER_GUN_STICKER);
+    dispatchEvent(TOOL_MOVED_EVENT);
+};
+const leftFingerGunStickerButton = document.createElement("button");
+leftFingerGunStickerButton.innerText = LEFT_FINGER_GUN_STICKER;
+leftFingerGunStickerButton.onclick = () => {
+    cursor = new StickerCursor(LEFT_FINGER_GUN_STICKER);
+    dispatchEvent(TOOL_MOVED_EVENT);
 };
 app.append(header);
 app.append(canvas);
@@ -132,50 +208,65 @@ app.append(undoButton);
 app.append(redoButton);
 app.append(thickyVicky);
 app.append(thinnyVinny);
+app.append(cowboyStickerButton);
+app.append(rightFingerGunStickerButton);
+app.append(leftFingerGunStickerButton);
 
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
+        cursor.setVisible(false);
         drawing = true;
-        currentLine = new MarkerLine(event.offsetX, event.offsetY, lineThickness);
-        points.push(currentLine);
+        currentDrawable = cursor.getDrawable(event.offsetX, event.offsetY);
+        points.push(currentDrawable);
+        redoStack = []
+        dispatchEvent(TOOL_MOVED_EVENT);
     }
 });
-addEventListener("mouseup", () => {
+addEventListener("mouseup", (event) => {
     drawing = false;
-    cursor = new Cursor(lineThickness);
+    if (event.target == canvas) {
+        cursor.setVisible(true);
+    }
+    dispatchEvent(TOOL_MOVED_EVENT);
 });
 
 addEventListener("mousemove", (event) => {
     if (event.target == canvas) {
+        cursor.move(event.offsetX, event.offsetY);
         if (drawing) {
-            cursor = null;
-            currentLine.drag(event.offsetX, event.offsetY);
-        } else if (cursor != null) {
-            cursor.hover(event.offsetX, event.offsetY);
+            currentDrawable.drag(event.offsetX, event.offsetY);
+            dispatchEvent(DRAWING_CHANGED_EVENT);
+        } else {
+            dispatchEvent(TOOL_MOVED_EVENT);
         }
-        dispatchEvent(new Event("drawing-changed"));
     }
 });
 addEventListener("mouseover", (event) => {
     if (event.target == canvas && !drawing) {
-        cursor = new Cursor(lineThickness);
+        cursor.setVisible(true)
     } else {
-        cursor = null;
+        cursor.setVisible(false)
     }
-    dispatchEvent(new Event("drawing-changed"));
+    dispatchEvent(DRAWING_CHANGED_EVENT);
 });
 
-addEventListener("drawing-changed", () => {
+addEventListener(DRAWING_CHANGED_EVENT.type, () => {
+    redraw()
+});
+addEventListener(TOOL_MOVED_EVENT.type, () => {
+    redraw()
+});
+
+function redraw() {
     clearCanvas();
-    ctx.strokeStyle = lineColor;
+    ctx.strokeStyle = LINE_COLOR;
     for (const line of points) {
         line.display(ctx);
     }
-    if (cursor != null) {
-        cursor.draw(ctx);
-    }
-});
+    cursor.draw(ctx);
+}
+
 function clearCanvas() {
-    ctx.fillStyle = canvasBackgroundColor;
+    ctx.fillStyle = CANVAS_BACKGROUND_COLOR;
     ctx.fillRect(zero, zero, canvas.width, canvas.height);
 }
