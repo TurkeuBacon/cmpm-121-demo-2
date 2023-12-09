@@ -13,16 +13,18 @@ class MarkerLine {
     initialPoint: Point;
     linePoints: Point[];
     thickness: number;
-    constructor(x: number, y: number, thickness: number) {
+    color: string;
+    constructor(x: number, y: number, thickness: number, color: string) {
         this.initialPoint = { x: x, y: y };
         this.linePoints = [];
         this.thickness = thickness;
+        this.color = color;
     }
     drag(x: number, y: number) {
         this.linePoints.push({ x: x, y: y });
     }
     display(ctx: CanvasRenderingContext2D) {
-        ctx.strokeStyle = LINE_COLOR;
+        ctx.strokeStyle = this.color;
         ctx.beginPath();
         ctx.lineWidth = this.thickness;
         ctx.moveTo(this.initialPoint.x, this.initialPoint.y);
@@ -35,16 +37,18 @@ class MarkerLine {
 class Sticker {
     position: Point;
     sticker: string;
-    constructor(x: number, y: number, sticker: string) {
+    color: string;
+    constructor(x: number, y: number, sticker: string, color: string) {
         this.position = { x:x, y:y };
         this.sticker = sticker;
+        this.color = color
     }
     drag(x: number, y: number) {
         this.position = { x: x, y: y };
     }
     display(ctx: CanvasRenderingContext2D) {
         ctx.font = STICKER_FONT;
-        ctx.fillStyle = LINE_COLOR;
+        ctx.fillStyle = this.color;
         ctx.fillText(this.sticker, this.position.x, this.position.y);
     }
 }
@@ -71,7 +75,7 @@ class LineCursor {
         if (!this.previewVisible) return;
         ctx.beginPath();
         ctx.lineWidth = this.currentThickness;
-        ctx.strokeStyle = LINE_COLOR;
+        ctx.strokeStyle = currentColor;
         ctx.arc(this.cursorX, this.cursorY, this.currentThickness * HALF, zero, CIRCLE_DEGREES);
         ctx.stroke();
     }
@@ -79,7 +83,7 @@ class LineCursor {
         this.previewVisible = visible;
     }
     getDrawable(x: number, y: number): MarkerLine {
-        return new MarkerLine(x, y, currentThickness);
+        return new MarkerLine(x, y, currentThickness, currentColor);
     }
 }
 class StickerCursor {
@@ -103,14 +107,14 @@ class StickerCursor {
     draw(ctx: CanvasRenderingContext2D) {
         if (!this.previewVisible) return;
         ctx.font = STICKER_FONT;
-        ctx.fillStyle = LINE_COLOR;
+        ctx.fillStyle = currentColor;
         ctx.fillText(this.currentSticker, this.cursorX, this.cursorY);
     }
     setVisible(visible: boolean) {
         this.previewVisible = visible;
     }
     getDrawable(x: number, y: number): Sticker {
-        return new Sticker(x, y, this.currentSticker);
+        return new Sticker(x, y, this.currentSticker, currentColor);
     }
 }
 
@@ -124,15 +128,16 @@ const CIRCLE_DEGREES = 360;
 const CANVAS_SIZE = 256;
 const EXPORT_SIZE = 1024;
 const CANVAS_BACKGROUND_COLOR = "white";
-const LINE_COLOR = "black";
 const STICKER_FONT = "30px serif";
 
 const THICK_THICKNESS = 8;
 const THIN_THICKNESS = 3;
 
 const DEFAULT_STICKERS = ["🤠", "👉", "👈", "🔫", "( ͡° ͜ʖ ͡°)"];
+const COLOR_PALLETE = ["black", "red", "green", "blue"];
 
 let currentThickness: number = THIN_THICKNESS;
+let currentColor: string = COLOR_PALLETE[0];
 
 let cursor: LineCursor | StickerCursor = new LineCursor(currentThickness);
 
@@ -204,6 +209,17 @@ function addSticker(newSticker: string) {
     };
     app.append(newStickerButton);
 }
+function addColor(color: string) {
+    const newColorButton = document.createElement("button");
+    newColorButton.style.color = color;
+    newColorButton.innerText = color;
+    newColorButton.onclick = () => {
+        currentColor = color;
+        dispatchEvent(TOOL_MOVED_EVENT);
+    };
+    app.append(newColorButton);
+}
+
 const addStickerButton = document.createElement("button");
 addStickerButton.innerText = "Add Sticker";
 addStickerButton.onclick = () => {
@@ -220,6 +236,9 @@ app.append(undoButton);
 app.append(redoButton);
 app.append(thickyVicky);
 app.append(thinnyVinny);
+COLOR_PALLETE.forEach(color => {
+    addColor(color);
+});
 app.append(addStickerButton);
 DEFAULT_STICKERS.forEach(sticker => {
     addSticker(sticker);
@@ -272,7 +291,6 @@ addEventListener(TOOL_MOVED_EVENT.type, () => {
 
 function redraw() {
     clearCanvas();
-    ctx.strokeStyle = LINE_COLOR;
     for (const line of drawables) {
         line.display(ctx);
     }
