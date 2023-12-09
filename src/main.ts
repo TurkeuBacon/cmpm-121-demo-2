@@ -41,7 +41,7 @@ class Sticker {
     constructor(x: number, y: number, sticker: string, color: string) {
         this.position = { x:x, y:y };
         this.sticker = sticker;
-        this.color = color
+        this.color = color;
     }
     drag(x: number, y: number) {
         this.position = { x: x, y: y };
@@ -137,7 +137,7 @@ const DEFAULT_STICKERS = ["🤠", "👉", "👈", "🔫", "( ͡° ͜ʖ ͡°)"];
 const COLOR_PALLETE = ["black", "red", "green", "blue"];
 
 let currentThickness: number = THIN_THICKNESS;
-let currentColor: string = COLOR_PALLETE[0];
+let currentColor: string = COLOR_PALLETE[zero];
 
 let cursor: LineCursor | StickerCursor = new LineCursor(currentThickness);
 
