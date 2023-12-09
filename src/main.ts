@@ -123,9 +123,7 @@ const LINE_COLOR = "black";
 const THICK_THICKNESS = 7;
 const THIN_THICKNESS = 2;
 
-const COWBOY_STICKER = "🤠";
-const RIGHT_FINGER_GUN_STICKER = "👉";
-const LEFT_FINGER_GUN_STICKER = "👈";
+const DEFAULT_STICKERS = ["🤠", "👉", "👈"];
 
 let currentThickness: number = THIN_THICKNESS;
 
@@ -183,23 +181,23 @@ thinnyVinny.onclick = () => {
     currentThickness = THIN_THICKNESS;
     cursor = new LineCursor(currentThickness);
 };
-const cowboyStickerButton = document.createElement("button");
-cowboyStickerButton.innerText = COWBOY_STICKER;
-cowboyStickerButton.onclick = () => {
-    cursor = new StickerCursor(COWBOY_STICKER);
-    dispatchEvent(TOOL_MOVED_EVENT);
-};
-const rightFingerGunStickerButton = document.createElement("button");
-rightFingerGunStickerButton.innerText = RIGHT_FINGER_GUN_STICKER;
-rightFingerGunStickerButton.onclick = () => {
-    cursor = new StickerCursor(RIGHT_FINGER_GUN_STICKER);
-    dispatchEvent(TOOL_MOVED_EVENT);
-};
-const leftFingerGunStickerButton = document.createElement("button");
-leftFingerGunStickerButton.innerText = LEFT_FINGER_GUN_STICKER;
-leftFingerGunStickerButton.onclick = () => {
-    cursor = new StickerCursor(LEFT_FINGER_GUN_STICKER);
-    dispatchEvent(TOOL_MOVED_EVENT);
+
+function addSticker(newSticker: string) {
+    const newStickerButton = document.createElement("button");
+    newStickerButton.innerText = newSticker;
+    newStickerButton.onclick = () => {
+        cursor = new StickerCursor(newSticker);
+        dispatchEvent(TOOL_MOVED_EVENT);
+    };
+    app.append(newStickerButton);
+}
+const addStickerButton = document.createElement("button");
+addStickerButton.innerText = "Add Sticker";
+addStickerButton.onclick = () => {
+    const newSticker = prompt("Enter New Sticker:", "😀");
+    if (newSticker != null) {
+        addSticker(newSticker);
+    }
 };
 app.append(header);
 app.append(canvas);
@@ -208,9 +206,10 @@ app.append(undoButton);
 app.append(redoButton);
 app.append(thickyVicky);
 app.append(thinnyVinny);
-app.append(cowboyStickerButton);
-app.append(rightFingerGunStickerButton);
-app.append(leftFingerGunStickerButton);
+app.append(addStickerButton);
+DEFAULT_STICKERS.forEach(sticker => {
+    addSticker(sticker);
+});
 
 addEventListener("mousedown", (event) => {
     if (event.target == canvas) {
